@@ -1,35 +1,50 @@
+-- Create database if not exists
+CREATE DATABASE IF NOT EXISTS hospitalmngsys;
 USE hospitalmngsys;
 
--- Create patients table
-CREATE TABLE IF NOT EXISTS patients (
+-- Create patient table (singular name to match servlet)
+CREATE TABLE IF NOT EXISTS patient (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    age INT NOT NULL,
-    gender VARCHAR(10) NOT NULL,
-    blood_group VARCHAR(3) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    phone VARCHAR(20),
+    address TEXT,
+    password VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create admin table (singular name to match servlet)
+CREATE TABLE IF NOT EXISTS admin (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
+    status VARCHAR(20) DEFAULT 'active',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create appointments table
 CREATE TABLE IF NOT EXISTS appointments (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    patient_id INT,
     doctor_name VARCHAR(255) NOT NULL,
     patient_name VARCHAR(255) NOT NULL,
     patient_email VARCHAR(255) NOT NULL,
     appointment_date DATE NOT NULL,
     appointment_time TIME NOT NULL,
     status VARCHAR(20) DEFAULT 'scheduled',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (patient_id) REFERENCES patient(id) ON DELETE SET NULL
 );
 
--- Create admins table
-CREATE TABLE IF NOT EXISTS admins (
+-- Create doctors table
+CREATE TABLE IF NOT EXISTS doctors (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    email VARCHAR(255) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,
     name VARCHAR(255) NOT NULL,
+    specialization VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    phone VARCHAR(20),
+    status VARCHAR(20) DEFAULT 'active',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -66,9 +81,18 @@ CREATE TABLE IF NOT EXISTS lab_test_bookings (
 );
 
 -- Insert sample admin data (password: admin123)
-INSERT INTO admins (email, password, name) VALUES 
-('admin@hospital.com', 'admin123', 'Hospital Administrator')
-ON DUPLICATE KEY UPDATE name = VALUES(name);
+INSERT INTO admin (name, email, password, status) VALUES 
+('Hospital Administrator', 'admin@hospital.com', 'admin123', 'active')
+ON DUPLICATE KEY UPDATE name = VALUES(name), status = VALUES(status);
+
+-- Insert sample doctors
+INSERT INTO doctors (name, specialization, email, phone, status) VALUES 
+('Dr. John Smith', 'Cardiology', 'dr.smith@hospital.com', '+1-555-0201', 'active'),
+('Dr. Sarah Johnson', 'Pediatrics', 'dr.johnson@hospital.com', '+1-555-0202', 'active'),
+('Dr. Michael Brown', 'Orthopedics', 'dr.brown@hospital.com', '+1-555-0203', 'active'),
+('Dr. Emily Davis', 'Dermatology', 'dr.davis@hospital.com', '+1-555-0204', 'active'),
+('Dr. Robert Wilson', 'Neurology', 'dr.wilson@hospital.com', '+1-555-0205', 'active')
+ON DUPLICATE KEY UPDATE specialization = VALUES(specialization), status = VALUES(status);
 
 -- Insert sample lab tests
 INSERT INTO lab_tests (test_name, price, description) VALUES 
@@ -93,11 +117,23 @@ INSERT INTO blood_bank (name, contact_number, address, blood_type, units_availab
 ON DUPLICATE KEY UPDATE units_available = VALUES(units_available);
 
 -- Create indexes for better performance
-CREATE INDEX idx_patients_email ON patients(email);
+CREATE INDEX idx_patient_email ON patient(email);
+CREATE INDEX idx_admin_email ON admin(email);
 CREATE INDEX idx_appointments_date ON appointments(appointment_date);
 CREATE INDEX idx_appointments_patient_email ON appointments(patient_email);
-CREATE INDEX idx_admins_email ON admins(email);
+CREATE INDEX idx_doctors_email ON doctors(email);
 CREATE INDEX idx_lab_test_bookings_email ON lab_test_bookings(patient_email);
 
+-- Show all tables
 SHOW TABLES;
+
+-- Show sample data
+SELECT 'Admin Users:' as Info;
+SELECT id, name, email, status FROM admin;
+
+SELECT 'Doctors:' as Info;
+SELECT id, name, specialization, email FROM doctors;
+
+SELECT 'Lab Tests:' as Info;
+SELECT id, test_name, price FROM lab_tests;
 
